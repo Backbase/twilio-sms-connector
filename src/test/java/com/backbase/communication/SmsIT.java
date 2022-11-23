@@ -69,7 +69,7 @@ public class SmsIT {
                 .withLogConsumer("message-broker", new Slf4jLogConsumer(log))
                 .withLogConsumer("twiliomock", new Slf4jLogConsumer(log));
         dockerCompose.start();
-        System.setProperty("spring.activemq.broker-url", "tcp://message-broker:" + dockerCompose.getServicePort("message-broker", 61616));
+        System.setProperty("spring.activemq.broker-url", "tcp://localhost:" + dockerCompose.getServicePort("message-broker", 61616));
         System.setProperty("twilio.mockUrl", "http://localhost:" + dockerCompose.getServicePort("twiliomock", 4010));
     }
 
