@@ -1,0 +1,15 @@
+name: Maven Verify
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  verify:
+    name: Maven Verify
+    uses: backbase/workflows/.github/workflows/maven-verify.yml@main
+    secrets:
+      maven-username: ${{ secrets.MAVEN_USERNAME }}
+      maven-password: ${{ secrets.MAVEN_PASSWORD }}

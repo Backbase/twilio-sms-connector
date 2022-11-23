@@ -1,0 +1,15 @@
+version: '3.9'
+
+services:
+  message-broker:
+    image: "symptoma/activemq"
+    hostname: message-broker
+
+  twiliomock:
+    image: "stoplight/prism:4"
+    hostname: twiliomock
+    volumes:
+      - ./twilio_api_v2010.json:/usr/src/prism/packages/cli/twilio_api_v2010.json
+    command: >
+      mock -p 4010 --host 0.0.0.0 twilio_api_v2010.json
+

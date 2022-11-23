@@ -1,0 +1,64 @@
+sso:
+  jwt:
+    internal:
+      signature:
+        key:
+          type: ENV
+          value: SIG_SECRET_KEY
+
+eureka:
+  client:
+    enabled: false
+
+
+logging:
+  level:
+    root: INFO
+    com:
+      backbase: DEBUG
+
+backbase:
+  communication:
+    channels:
+      sms:
+        "0-7": sms-medium-priority
+  sms:
+    worker-count: 1
+spring:
+  activemq:
+    user: admin
+    password: admin
+  cloud:
+    stream:
+      default:
+        content-type: application/json
+        group: systemtest
+        consumer:
+          exchangeDurable: true
+          concurrency: 1
+          prefetch: 1000
+          autoCommitOnError: false
+          max-attempts: 5
+          backOffInitialInterval: 2000
+          backOffMaxInterval: 60000
+          backOffMutliplier: 2.0
+      default-binder: activemq
+      function.definition: commLowPriority;commMediumPriority;commHighPriority;trackingFunction
+      bindings:
+        sms-medium-priority:
+          destination: Backbase.communication.sms-medium-priority
+        trackingFunction-in-0:
+          destination: Backbase.communication.messages-tracking
+        commLowPriority-in-0:
+          destination: Backbase.communication.sms-low-priority
+        commMediumPriority-in-0:
+          destination: Backbase.communication.sms-medium-priority
+        commHighPriority-in-0:
+          destination: Backbase.communication.sms-high-priority
+        commTracking-out-0:
+          destination: Backbase.communication.messages-tracking
+twilio:
+  mockUrl: http://twiliomock:4010
+  accountSid: "ACAACf90adC9B790Bac79eEFab80E010BD"
+  authToken: token
+  fromNumber: 123456

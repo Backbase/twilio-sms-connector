@@ -1,0 +1,3 @@
+spring:
+  application:
+    name: twilio-sms-integration-service
