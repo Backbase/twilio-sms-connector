@@ -8,7 +8,7 @@
     </parent>
 
     <artifactId>twilio-sms-connector</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -17,6 +17,8 @@
         <mapstruct.version>1.5.2.Final</mapstruct.version>
         <unitils-core.version>3.4.6</unitils-core.version>
         <boat-maven-plugin.version>0.16.6</boat-maven-plugin.version>
+        <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
+        <mapstruct.version>1.5.2.Final</mapstruct.version>
         <communication.version>2.1.0-b8</communication.version>
         <backbase-bom.version>2022.08.3-LTS</backbase-bom.version>
         <open-api-specs-dir>${project.build.directory}/specs</open-api-specs-dir>
@@ -40,7 +42,7 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
-                <version>1.17.5</version>
+                <version>1.17.6</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -148,6 +150,11 @@
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
                         </path>
+                        <dependency>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
+                        </dependency>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
@@ -304,32 +311,6 @@
                             <sources>
                                 <source>${project.build.directory}/generated-sources</source>
                             </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
-                <configuration>
-                    <excludes>
-                        <exclude>**/*IT</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.22.2</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>**/*IT</include>
-                            </includes>
                         </configuration>
                     </execution>
                 </executions>
