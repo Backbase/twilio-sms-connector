@@ -2,6 +2,7 @@ package com.backbase.communication;
 
 import com.backbase.buildingblocks.commns.model.ProcessingStatus;
 import com.backbase.buildingblocks.commns.service.MessageSenderService;
+import com.backbase.buildingblocks.testutils.TestTokenUtil;
 import com.backbase.communication.client.TwilioClientImpl;
 import com.backbase.communication.communication.CommunicationChannelConsumer;
 import com.backbase.communication.communication.CommunicationChannelListener;
@@ -27,12 +28,15 @@ import com.backbase.communication.util.TestMessageBuilder;
 import com.backbase.communication.validator.SmsV1Validator;
 import com.backbase.communication.validator.SmsV2Validator;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration;
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 
@@ -40,6 +44,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -56,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 public class SmsIT {
     static DockerComposeContainer dockerCompose;
 
+    private final RestTemplate template = new RestTemplate();
     @Autowired
     TrackingReceiver trackingReceiver;
 
@@ -66,8 +72,10 @@ public class SmsIT {
         dockerCompose = new DockerComposeContainer(new File("src/test/resources/docker-compose-test.yaml"))
                 .withExposedService("message-broker", 61616)
                 .withExposedService("twiliomock", 4010)
+                .withExposedService("communication", 8080)
                 .withLogConsumer("message-broker", new Slf4jLogConsumer(log))
-                .withLogConsumer("twiliomock", new Slf4jLogConsumer(log));
+                .withLogConsumer("twiliomock", new Slf4jLogConsumer(log))
+                .withLogConsumer("communication", new Slf4jLogConsumer(log));
         dockerCompose.start();
         System.setProperty("spring.activemq.broker-url", "tcp://localhost:" + dockerCompose.getServicePort("message-broker", 61616));
         System.setProperty("twilio.mockUrl", "http://localhost:" + dockerCompose.getServicePort("twiliomock", 4010));
@@ -87,11 +95,42 @@ public class SmsIT {
     public void sendSmsV1Test() throws InterruptedException {
         TestMessageBuilder testMessageBuilder = new TestMessageBuilder();
         Message<com.backbase.outbound.integration.communications.rest.spec.v1.model.BatchResponse> message = testMessageBuilder.createMessageV1();
-        messageSender.sendMessage(message);
+
+        String host = dockerCompose.getServiceHost("communication", 8080);
+        int port = dockerCompose.getServicePort("communication", 8080);
+
+        String uuid = UUID.randomUUID().toString();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + TestTokenUtil.encode(TestTokenUtil.serviceClaimSet()));
+
+        RequestEntity<String> request = RequestEntity.post("http://%s:%s/service-api/v1/messages".formatted(host, port))
+                .headers(headers)
+                .body("""
+                {
+                  "messages": [
+                    {
+                      "deliveryChannel": "sms",
+                      "priority": 0,
+                      "tag": "%s",
+                      "payload": {
+                        "body": "This is the email body for john",
+                        "to": ["12345"],
+                        "from": "54321"
+                      }
+                    }
+                  ]
+                }
+                """.formatted(uuid));
+
+        ResponseEntity<Void> exchange = template.exchange(request, Void.TYPE);
+        Assertions.assertEquals(HttpStatus.ACCEPTED, exchange.getStatusCode());
+//        messageSender.sendMessage(message);
 
         Thread.sleep(5000);
 
-        assertThat(trackingCodes).contains(message.getTrackingId().toString());
+        assertThat(trackingCodes).isNotEmpty();
     }
 
     public void trackingReceived(String trackingId, ProcessingStatus status) {
