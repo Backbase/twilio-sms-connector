@@ -26,7 +26,7 @@
         <communications-outbound-integration-api.directory>${open-api-specs-dir}/identity</communications-outbound-integration-api.directory>
         <communications-outbound-integration-api.base-package>com.backbase.outbound.integration.communications.rest.spec.v1</communications-outbound-integration-api.base-package>
         <SIG_SECRET_KEY>JWTSecretKeyDontUseInProduction!</SIG_SECRET_KEY>
-        <testcontainers.version>1.17.2</testcontainers.version>
+        <testcontainers.version>1.17.6</testcontainers.version>
     </properties>
     <dependencyManagement>
         <dependencies>
