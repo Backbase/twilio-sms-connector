@@ -8,24 +8,25 @@
     </parent>
 
     <artifactId>twilio-sms-connector</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>war</packaging>
 
     <properties>
         <java.version>17</java.version>
         <twilio.version>8.34.0</twilio.version>
         <mapstruct.version>1.5.2.Final</mapstruct.version>
         <unitils-core.version>3.4.6</unitils-core.version>
-        <boat-maven-plugin.version>0.16.5</boat-maven-plugin.version>
+        <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
+        <SIG_SECRET_KEY>JWTSecretKeyDontUseInProduction!</SIG_SECRET_KEY>
+        <mapstruct.version>1.5.2.Final</mapstruct.version>
         <communication.version>2.1.0-b8</communication.version>
         <backbase-bom.version>2022.08.3-LTS</backbase-bom.version>
+        <boat-maven-plugin.version>0.16.5</boat-maven-plugin.version>
         <open-api-specs-dir>${project.build.directory}/specs</open-api-specs-dir>
         <action-service-api.directory>${open-api-specs-dir}/action</action-service-api.directory>
         <communications-events.directory>${open-api-specs-dir}/communication-spec</communications-events.directory>
         <communications-event.base-package>com.backbase.communication.spec.v1</communications-event.base-package>
         <communications-outbound-integration-api.directory>${open-api-specs-dir}/identity</communications-outbound-integration-api.directory>
         <communications-outbound-integration-api.base-package>com.backbase.outbound.integration.communications.rest.spec.v1</communications-outbound-integration-api.base-package>
-        <SIG_SECRET_KEY>JWTSecretKeyDontUseInProduction!</SIG_SECRET_KEY>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -39,7 +40,7 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>testcontainers-bom</artifactId>
-                <version>1.17.5</version>
+                <version>1.17.6</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -147,6 +148,11 @@
                             <artifactId>lombok</artifactId>
                             <version>${lombok.version}</version>
                         </path>
+                        <dependency>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
+                        </dependency>
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
@@ -303,32 +309,6 @@
                             <sources>
                                 <source>${project.build.directory}/generated-sources</source>
                             </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
-                <configuration>
-                    <excludes>
-                        <exclude>**/*IT</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.22.2</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                        <configuration>
-                            <includes>
-                                <include>**/*IT</include>
-                            </includes>
                         </configuration>
                     </execution>
                 </executions>
