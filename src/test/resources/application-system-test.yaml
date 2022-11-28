@@ -18,10 +18,6 @@ logging:
       backbase: DEBUG
 
 backbase:
-  communication:
-    channels:
-      sms:
-        "0-7": sms-medium-priority
   sms:
     worker-count: 1
 spring:
