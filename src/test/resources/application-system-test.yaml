@@ -39,18 +39,12 @@ spring:
           backOffMaxInterval: 60000
           backOffMutliplier: 2.0
       default-binder: activemq
-      function.definition: commLowPriority;commMediumPriority;commHighPriority;trackingFunction
+      function.definition: commMediumPriority;trackingFunction
       bindings:
-        sms-medium-priority:
-          destination: Backbase.communication.sms-medium-priority
         trackingFunction-in-0:
           destination: Backbase.communication.messages-tracking
-        commLowPriority-in-0:
-          destination: Backbase.communication.sms-low-priority
         commMediumPriority-in-0:
           destination: Backbase.communication.sms-medium-priority
-        commHighPriority-in-0:
-          destination: Backbase.communication.sms-high-priority
         commTracking-out-0:
           destination: Backbase.communication.messages-tracking
 twilio:
