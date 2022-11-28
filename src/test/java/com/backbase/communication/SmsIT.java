@@ -32,8 +32,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @Testcontainers
@@ -89,7 +91,7 @@ public class SmsIT {
     private List<String> trackingCodes = new ArrayList<>();
 
     @Test
-    public void sendSmsV1Test() throws InterruptedException, JsonProcessingException {
+    void sendSmsV1Test() throws InterruptedException, JsonProcessingException {
         TestMessageBuilder testMessageBuilder = new TestMessageBuilder();
         Message<com.backbase.outbound.integration.communications.rest.spec.v1.model.BatchResponse> message = testMessageBuilder.createMessageV1();
 
@@ -113,7 +115,7 @@ public class SmsIT {
         ResponseEntity<Void> exchange = template.exchange(request, Void.TYPE);
         Assertions.assertEquals(HttpStatus.ACCEPTED, exchange.getStatusCode());
 
-        Thread.sleep(2000);
+        await().atMost(2, TimeUnit.SECONDS).until(() -> !trackingCodes.isEmpty());
 
         assertThat(trackingCodes).isNotEmpty();
     }
@@ -125,7 +127,7 @@ public class SmsIT {
     }
 
     @Test
-    public void sendSmsV2Test() throws InterruptedException, JsonProcessingException {
+    void sendSmsV2Test() throws InterruptedException, JsonProcessingException {
         TestMessageBuilder testMessageBuilder = new TestMessageBuilder();
         Message<SmsChannelEvent> message = testMessageBuilder.createMessageV2();
 
@@ -149,7 +151,7 @@ public class SmsIT {
         ResponseEntity<Void> exchange = template.exchange(request, Void.TYPE);
         Assertions.assertEquals(HttpStatus.ACCEPTED, exchange.getStatusCode());
 
-        Thread.sleep(2000);
+        await().atMost(2, TimeUnit.SECONDS).until(() -> !trackingCodes.isEmpty());
 
         assertThat(trackingCodes).isNotEmpty();
     }
