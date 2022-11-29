@@ -13,3 +13,17 @@ services:
     command: >
       mock -p 4010 --host 0.0.0.0 twilio_api_v2010.json
 
+  communication:
+    image: repo.backbase.com/docker-releases/communication:2022.11
+    links:
+      - message-broker
+    environment:
+      - eureka.client.enabled=false
+      - spring.activemq.broker-url=tcp://message-broker:61616
+      - spring.activemq.user=admin
+      - spring.activemq.password=admin
+      - SIG_SECRET_KEY=JWTSecretKeyDontUseInProduction!
+      - EXTERNAL_SIG_SECRET_KEY=JWTSecretKeyDontUseInProduction!
+      - EXTERNAL_ENC_SECRET_KEY=JWTEncKeyDontUseInProduction666!
+      - logging.level.com.backbase=DEBUG
+      - logging.level.com.backbase.communication=DEBUG

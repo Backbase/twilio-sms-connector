@@ -1,76 +1,83 @@
 package com.backbase.communication;
 
 import com.backbase.buildingblocks.commns.model.ProcessingStatus;
-import com.backbase.buildingblocks.commns.service.MessageSenderService;
-import com.backbase.communication.client.TwilioClientImpl;
-import com.backbase.communication.communication.CommunicationChannelConsumer;
-import com.backbase.communication.communication.CommunicationChannelListener;
-import com.backbase.communication.communication.CommunicationChannelQueueService;
-import com.backbase.communication.config.MessageChannelProperties;
-import com.backbase.communication.config.MessageChannelPropertiesConverter;
-import com.backbase.communication.config.TwilioConfigurationProperties;
-import com.backbase.communication.config.mock.MockHttpClient;
-import com.backbase.communication.config.mock.MockTwilioClientCreator;
-import com.backbase.communication.config.mock.MockTwilioConfiguration;
+import com.backbase.buildingblocks.testutils.TestTokenUtil;
 import com.backbase.communication.event.spec.v1.SmsChannelEvent;
-import com.backbase.communication.mapper.SmsV1Mapper;
-import com.backbase.communication.mapper.SmsV2Mapper;
 import com.backbase.communication.model.Message;
-import com.backbase.communication.sender.MessageSender;
-import com.backbase.communication.sender.MessageSenderProperties;
-import com.backbase.communication.service.SmsNotificationService;
-import com.backbase.communication.service.SmsServiceV1;
-import com.backbase.communication.service.SmsServiceV2;
-import com.backbase.communication.service.SmsStrategyFactory;
 import com.backbase.communication.tracking.TrackingReceiver;
 import com.backbase.communication.util.TestMessageBuilder;
-import com.backbase.communication.validator.SmsV1Validator;
-import com.backbase.communication.validator.SmsV2Validator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.cloud.stream.test.binder.TestSupportBinderAutoConfiguration;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.http.*;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.web.client.RestTemplate;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-@SpringBootTest(classes = {MessageSender.class, MessageSenderProperties.class, TrackingReceiver.class, MessageChannelProperties.class,
-        MessageChannelPropertiesConverter.class, CommunicationChannelConsumer.class, SmsStrategyFactory.class,
-        SmsServiceV1.class, SmsServiceV2.class, SmsV1Validator.class, SmsV2Validator.class, SmsNotificationService.class,
-        TwilioClientImpl.class, SmsV1Mapper.class, SmsV2Mapper.class, CommunicationChannelListener.class,
-        MessageSenderService.class, CommunicationChannelQueueService.class, MockTwilioConfiguration.class, MockTwilioConfiguration.class,
-        TwilioConfigurationProperties.class, MockTwilioClientCreator.class, MockHttpClient.class})
+@Testcontainers
+@SpringBootTest(classes = {TwilioSmsConnectorApplication.class})
+@ContextConfiguration(classes = TwilioSmsConnectorApplication.class, initializers = {SmsIT.Initializer.class})
+@ActiveProfiles({"default", "system-test"})
 @EnableAutoConfiguration(exclude = TestSupportBinderAutoConfiguration.class)
-
 @Slf4j
 public class SmsIT {
-    static DockerComposeContainer dockerCompose;
+    static DockerComposeContainer dockerCompose = new DockerComposeContainer(new File("src/test/resources/docker-compose-test.yaml"))
+            .withExposedService("message-broker", 61616)
+            .withExposedService("twiliomock", 4010)
+            .withExposedService("communication", 8080)
+            .withLogConsumer("message-broker", new Slf4jLogConsumer(log))
+            .withLogConsumer("twiliomock", new Slf4jLogConsumer(log))
+            .withLogConsumer("communication", new Slf4jLogConsumer(log));
+    ;
 
+    private final RestTemplate template = new RestTemplate();
     @Autowired
     TrackingReceiver trackingReceiver;
 
-    static {
+    static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+
+        public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
+            dockerCompose.start();
+            TestPropertyValues.of(
+                            "spring.activemq.broker-url=tcp://%s:%s"
+                                    .formatted(dockerCompose.getServiceHost("message-broker", 61616),
+                                            dockerCompose.getServicePort("message-broker", 61616)),
+                            "twilio.mockUrl=http://%s:%s"
+                                    .formatted(dockerCompose.getServiceHost("twiliomock", 4010),
+                                            dockerCompose.getServicePort("twiliomock", 4010)))
+                    .applyTo(configurableApplicationContext.getEnvironment());
+
+        }
+    }
+
+    @BeforeAll
+    public static void envSetup() {
         System.setProperty("TESTCONTAINERS_RYUK_DISABLED", "true");
-        System.setProperty("spring.profiles.active", "system-test");
         System.setProperty("SIG_SECRET_KEY", "JWTSecretKeyDontUseInProduction!");
-        dockerCompose = new DockerComposeContainer(new File("src/test/resources/docker-compose-test.yaml"))
-                .withExposedService("message-broker", 61616)
-                .withExposedService("twiliomock", 4010)
-                .withLogConsumer("message-broker", new Slf4jLogConsumer(log))
-                .withLogConsumer("twiliomock", new Slf4jLogConsumer(log));
-        dockerCompose.start();
-        System.setProperty("spring.activemq.broker-url", "tcp://localhost:" + dockerCompose.getServicePort("message-broker", 61616));
-        System.setProperty("twilio.mockUrl", "http://localhost:" + dockerCompose.getServicePort("twiliomock", 4010));
     }
 
     @BeforeEach
@@ -79,19 +86,38 @@ public class SmsIT {
     }
 
     @Autowired
-    private MessageSender messageSender;
+    private ObjectMapper objectMapper;
 
     private List<String> trackingCodes = new ArrayList<>();
 
     @Test
-    public void sendSmsV1Test() throws InterruptedException {
+    void sendSmsV1Test() throws InterruptedException, JsonProcessingException {
         TestMessageBuilder testMessageBuilder = new TestMessageBuilder();
         Message<com.backbase.outbound.integration.communications.rest.spec.v1.model.BatchResponse> message = testMessageBuilder.createMessageV1();
-        messageSender.sendMessage(message);
 
-        Thread.sleep(5000);
+        String host = dockerCompose.getServiceHost("communication", 8080);
+        int port = dockerCompose.getServicePort("communication", 8080);
 
-        assertThat(trackingCodes).contains(message.getTrackingId().toString());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + TestTokenUtil.encode(TestTokenUtil.serviceClaimSet()));
+
+        RequestEntity<String> request = RequestEntity.post("http://%s:%s/service-api/v1/messages".formatted(host, port))
+                .headers(headers)
+                .body("""
+                        {
+                          "messages": [
+                            %s
+                          ]
+                        }
+                        """.formatted(objectMapper.writeValueAsString(message)));
+
+        ResponseEntity<Void> exchange = template.exchange(request, Void.TYPE);
+        Assertions.assertEquals(HttpStatus.ACCEPTED, exchange.getStatusCode());
+
+        await().atMost(2, TimeUnit.SECONDS).until(() -> !trackingCodes.isEmpty());
+
+        assertThat(trackingCodes).isNotEmpty();
     }
 
     public void trackingReceived(String trackingId, ProcessingStatus status) {
@@ -101,13 +127,32 @@ public class SmsIT {
     }
 
     @Test
-    public void sendSmsV2Test() throws InterruptedException {
+    void sendSmsV2Test() throws InterruptedException, JsonProcessingException {
         TestMessageBuilder testMessageBuilder = new TestMessageBuilder();
         Message<SmsChannelEvent> message = testMessageBuilder.createMessageV2();
-        messageSender.sendMessage(message);
 
-        Thread.sleep(5000);
+        String host = dockerCompose.getServiceHost("communication", 8080);
+        int port = dockerCompose.getServicePort("communication", 8080);
 
-        assertThat(trackingCodes).contains(message.getTrackingId().toString());
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + TestTokenUtil.encode(TestTokenUtil.serviceClaimSet()));
+
+        RequestEntity<String> request = RequestEntity.post("http://%s:%s/service-api/v1/messages".formatted(host, port))
+                .headers(headers)
+                .body("""
+                        {
+                          "messages": [
+                            %s
+                          ]
+                        }
+                        """.formatted(objectMapper.writeValueAsString(message)));
+
+        ResponseEntity<Void> exchange = template.exchange(request, Void.TYPE);
+        Assertions.assertEquals(HttpStatus.ACCEPTED, exchange.getStatusCode());
+
+        await().atMost(2, TimeUnit.SECONDS).until(() -> !trackingCodes.isEmpty());
+
+        assertThat(trackingCodes).isNotEmpty();
     }
 }

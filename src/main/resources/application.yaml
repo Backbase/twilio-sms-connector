@@ -26,6 +26,34 @@ management:
   health:
     jms:
      enabled: false
+
 backbase:
   sms:
     worker-count: 2
+
+spring:
+  cloud:
+    stream:
+      default:
+        content-type: application/json
+        group: sms
+        consumer:
+          exchangeDurable: true
+          concurrency: 1
+          prefetch: 1000
+          autoCommitOnError: false
+          max-attempts: 5
+          backOffInitialInterval: 2000
+          backOffMaxInterval: 60000
+          backOffMutliplier: 2.0
+      default-binder: activemq
+      function.definition: commLowPriority;commMediumPriority;commHighPriority;commTracking
+      bindings:
+        commLowPriority-in-0:
+          destination: Backbase.communication.sms-low-priority
+        commMediumPriority-in-0:
+          destination: Backbase.communication.sms-medium-priority
+        commHighPriority-in-0:
+          destination: Backbase.communication.sms-high-priority
+        commTracking-out-0:
+          destination: Backbase.communication.messages-tracking
