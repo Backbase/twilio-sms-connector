@@ -2,9 +2,9 @@
 
 ## Supported Versions
 
-Backbase maintains release branches for the three most recent minor releases. 
-Applicable fixes, including security fixes, may be backported to those three release branches, depending on severity and feasibility. 
-Please refer to [releases](/releases) for details.
+Backbase maintains the latest release.
+Applicable fixes, including security fixes will be applied to latest release, depending on severity and feasibility. 
+Please refer to [releases](https://github.com/Backbase/twilio-sms-connector/releases) for details.
 
 ## Reporting a Vulnerability
 
