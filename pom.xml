@@ -23,7 +23,7 @@
         <boat-maven-plugin.version>0.16.6</boat-maven-plugin.version>
         <SIG_SECRET_KEY>JWTSecretKeyDontUseInProduction!</SIG_SECRET_KEY>
         <open-api-specs-dir>${project.build.directory}/specs</open-api-specs-dir>
-        <build-helper-maven-plugin.version>3.2.0</build-helper-maven-plugin.version>
+        <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
         <action-service-api.directory>${open-api-specs-dir}/action</action-service-api.directory>
         <communications-event.base-package>com.backbase.communication.spec.v1</communications-event.base-package>
         <communications-events.directory>${open-api-specs-dir}/communication-spec</communications-events.directory>
