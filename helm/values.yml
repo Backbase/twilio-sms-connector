@@ -1,0 +1,24 @@
+fullnameOverride: twilio-sms-connector
+image:
+  registry: ghcr.io
+  repository: backbase/twilio-sms-connector
+  tag: 1.0.0
+activemq:
+  enabled: true
+env:
+  "spring.sleuth.function.enabled": "false"
+  "twilio.accountSid":
+    value:
+      secretKeyRef:
+        name: twilio-credentials
+        key: accountSid
+  "twilio.authToken":
+    value:
+      secretKeyRef:
+        name: twilio-credentials
+        key: authToken
+  "twilio.fromNumber":
+    value:
+      secretKeyRef:
+        name: twilio-credentials
+        key: fromNumber
