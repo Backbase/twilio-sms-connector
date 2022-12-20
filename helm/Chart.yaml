@@ -1,6 +1,6 @@
 apiVersion: v2
 
-name: twilio-sms-connector
+name: twilio-sms-connector-helm-chart
 description: A Helm chart for Twilio SMS Connector
 type: application
 version: 0.1.0
