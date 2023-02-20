@@ -20,7 +20,7 @@
         <communication.version>2.1.0-b8</communication.version>
         <testcontainers.version>1.17.6</testcontainers.version>
         <backbase-bom.version>2022.08.3-LTS</backbase-bom.version>
-        <boat-maven-plugin.version>0.16.6</boat-maven-plugin.version>
+        <boat-maven-plugin.version>0.17.0</boat-maven-plugin.version>
         <SIG_SECRET_KEY>JWTSecretKeyDontUseInProduction!</SIG_SECRET_KEY>
         <open-api-specs-dir>${project.build.directory}/specs</open-api-specs-dir>
         <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
