@@ -18,7 +18,7 @@
         <mapstruct.version>1.5.2.Final</mapstruct.version>
         <unitils-core.version>3.4.6</unitils-core.version>
         <communication.version>2.1.0-b8</communication.version>
-        <testcontainers.version>1.17.6</testcontainers.version>
+        <testcontainers.version>1.19.0</testcontainers.version>
         <backbase-bom.version>2022.08.3-LTS</backbase-bom.version>
         <boat-maven-plugin.version>0.16.6</boat-maven-plugin.version>
         <SIG_SECRET_KEY>JWTSecretKeyDontUseInProduction!</SIG_SECRET_KEY>
